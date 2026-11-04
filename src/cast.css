@@ -1,0 +1,52 @@
+/* Each animation owns one layer: layout > entrance > action > breath > pose. */
+.cast-stage{position:absolute;inset:0;pointer-events:none}
+.cast-slot{--h:86dvh;position:absolute;height:var(--h);width:calc(var(--h) * .55);bottom:-1.5%;left:53%;transform:translateX(-50%);isolation:isolate}
+.cast-presence,.cast-action,.cast-breath{position:absolute;inset:0}
+.cast-slot.slot-left{left:34%}.cast-slot.slot-right{left:72%}
+.cast-stage[data-count="3"] .slot-left{left:22%}.cast-stage[data-count="3"] .slot-center{left:51%}.cast-stage[data-count="3"] .slot-right{left:80%}
+.cast-shitou{--h:81dvh}.cast-leader{--h:90dvh}.cast-bugler{--h:77dvh}.cast-medic{--h:85dvh}
+.cast-mother{--h:82dvh}.cast-ama{--h:77dvh}.cast-aunt{--h:79dvh}
+.cast-frame{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:brightness(.93) saturate(.89);user-select:none;pointer-events:none;z-index:1}
+.cast-stage[data-focus]:not([data-focus=""]) .cast-frame{filter:brightness(.81) saturate(.79)}
+.cast-stage .cast-speaking .cast-frame{filter:brightness(1.035) saturate(.98)}
+.frame-current{animation:cast-reveal .24s ease both}.frame-previous{animation:cast-away .24s ease both}
+@keyframes cast-reveal{from{opacity:0}to{opacity:1}}@keyframes cast-away{from{opacity:1}to{opacity:0}}
+.cast-breath{animation:cast-breathe 5.6s ease-in-out infinite;transform-origin:50% 85%}
+.cast-leader .cast-breath{animation-duration:6.5s}.cast-bugler .cast-breath{animation-duration:4.9s;animation-delay:-1.7s}
+.cast-shitou .cast-breath{animation-delay:-.8s}.cast-medic .cast-breath{animation-delay:-2.2s}
+@keyframes cast-breathe{0%,100%{translate:0 0}50%{translate:0 -1.7px}}
+.cast-quiet .cast-breath,.cast-quiet .cast-frame{animation:none}.cast-paused .cast-breath{animation-play-state:paused}
+.cast-ground{position:absolute;bottom:1.2%;left:23%;width:54%;height:2.2%;border-radius:50%;background:#0c140b55;filter:blur(2px);z-index:0;opacity:.8}
+.cast-slot[data-pose="act"] .cast-ground,.cast-slot[data-pose="grief"] .cast-ground{width:65%;left:17%}
+.cast-retry{position:absolute;bottom:38%;left:50%;translate:-50% 0;pointer-events:auto;font-size:13px;min-height:44px;background:#1e281ee6;color:#e8d6b2;padding:9px 14px;border:1px solid #a28b62;white-space:nowrap}
+.person-portrait{background-image:none;height:235px;aspect-ratio:auto;width:175px}.person-card{grid-template-columns:175px 1fr}
+.is-playing .cast-slot.cast-leaving{pointer-events:none}
+.is-playing .scene-ending-relay .cast-stage{filter:saturate(.7)}.is-playing .scene-ending-lamplight .cast-stage{filter:sepia(.07)}
+/* Turn eye lines and reaching hands towards the other person. */
+.cast-medic.slot-right .cast-frame,.cast-ama.slot-right .cast-frame,.cast-aunt.slot-right .cast-frame{scale:-1 1}
+.cast-leader.slot-left[data-pose="act"] .cast-frame{scale:-1 1}
+.cast-shitou.slot-right[data-pose="idle"] .cast-frame,.cast-shitou.slot-right[data-pose="talk"] .cast-frame{scale:-1 1}
+/* Low actions happen farther into the scene. Their hands stay above the dialogue. */
+.cast-slot.cast-leader[data-pose="act"],.cast-slot.cast-leader[data-pose="hurt"],.cast-slot.cast-leader[data-pose="grief"],.cast-slot.cast-medic[data-pose="act"],.cast-slot.cast-medic[data-pose="grief"],.cast-slot.cast-bugler[data-pose="hurt"],.cast-slot.cast-bugler[data-pose="grief"]{bottom:12%}
+@media(min-width:601px){
+ .hands-scene .cast-slot.cast-shitou[data-pose="act"]{left:22%;bottom:-1.5%}
+ .hands-scene .cast-slot.cast-mother[data-pose="idle"]{left:24%;bottom:-1.5%}
+ .is-playing .hands-scene .dialogue-panel{width:min(700px,55vw);left:auto;right:4.5vw;transform:none;padding-left:29px;padding-right:29px}
+}
+@media(max-width:1000px) and (min-width:601px){.cast-slot.slot-left{left:29%}.cast-slot.slot-right{left:73%}}
+@media(max-width:600px){
+ .cast-slot{--h:62dvh;bottom:25%;left:52%}.cast-slot.slot-left{left:26%}.cast-slot.slot-right{left:77%}
+ .cast-shitou{--h:58dvh}.cast-leader{--h:65dvh}.cast-medic{--h:61dvh}.cast-bugler{--h:55dvh}
+ .cast-mother{--h:61dvh}.cast-ama{--h:56dvh}.cast-aunt{--h:58dvh}
+ .cast-stage[data-count="3"] .cast-slot{--h:54dvh;bottom:27%}.cast-stage[data-count="3"] .cast-shitou{--h:51dvh}.cast-stage[data-count="3"] .cast-leader{--h:57dvh}.cast-stage[data-count="3"] .cast-bugler{--h:49dvh}
+ .cast-stage[data-count="3"] .slot-left{left:19%}.cast-stage[data-count="3"] .slot-center{left:50%}.cast-stage[data-count="3"] .slot-right{left:82%}
+ .cast-slot.cast-shitou[data-pose="act"],.cast-slot.cast-mother[data-pose="idle"],.cast-slot.cast-leader[data-pose="act"],.cast-slot.cast-leader[data-pose="hurt"],.cast-slot.cast-leader[data-pose="grief"],.cast-slot.cast-medic[data-pose="act"],.cast-slot.cast-medic[data-pose="grief"],.cast-slot.cast-bugler[data-pose="hurt"],.cast-slot.cast-bugler[data-pose="grief"]{bottom:30%}
+ .person-portrait{height:190px;width:103px}.person-card{grid-template-columns:103px 1fr}
+ .is-playing .at-ending .cast-slot{bottom:40%}
+}
+@media(max-height:540px) and (min-width:601px){.cast-slot{bottom:-15%}}
+@media(prefers-reduced-motion:reduce){.cast-breath,.cast-frame{animation:none}}
+/* Keep a crucial small prop out of the reading surface and the dark vignette. */
+.hands-scene .cinema-vignette{background:linear-gradient(0deg,#07100b55,transparent 50%),linear-gradient(90deg,#07100b08,transparent 40%,#07100b33)}
+.hands-scene .scene-shade{background:linear-gradient(0deg,#101a1533,transparent 40%)}
+@media(min-width:601px){.is-playing .bowl-scene .dialogue-panel{width:min(700px,55vw);left:4.5vw;right:auto;transform:none;padding-left:29px;padding-right:29px}}

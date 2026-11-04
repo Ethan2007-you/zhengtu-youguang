@@ -1,0 +1,21 @@
+# Dependencies and local machine state
+node_modules/
+.openai/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+
+# Temporary QA tools and local archives
+qa/
+*.zip
+*.tar.gz
+
+# One-off migration scripts; not part of the development package
+scripts/update_ui.py
+scripts/update_scene.py
+scripts/prepare_shitou_art.py
+
+# dist/ and 双击即玩/ are deliberately included in release snapshots.
