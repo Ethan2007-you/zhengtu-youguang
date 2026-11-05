@@ -1,15 +1,12 @@
-import {scores, type Cue, type Track} from './audioScore';
-import type {SceneId} from './story';
+import type {Cue, Track} from './audioScore';
+import {assetUrl} from './assetUrl';
 
-type Voice = 'pluck' | 'reed' | 'bow' | 'brass' | 'ceramic';
+type Voice = 'pluck' | 'brass' | 'ceramic';
 type Playing = {source: AudioBufferSourceNode; gain: GainNode};
-type Layer = {id: string | null; revision: number; playing?: Playing};
 type Mix = {audio: boolean; music: number; effects: number; paused: boolean; hushed: boolean};
 const sampleRate = 24_000;
 const voices: Record<Voice, readonly number[]> = {
   pluck: [1, .32, .18, .13, .07, .04],
-  reed: [1, .17, .23, .06, .08],
-  bow: [1, .44, .24, .15, .10, .06],
   brass: [1, .49, .30, .16, .10, .07, .04],
   ceramic: [1, .29, .11],
 };
@@ -33,7 +30,7 @@ function tone(
   if (vibrato && depth) {
     vibrato.frequency.value = 4.4;
     depth.gain.setValueAtTime(0, start);
-    depth.gain.linearRampToValueAtTime(voice === 'bow' ? 10 : 6, start + length / 2);
+    depth.gain.linearRampToValueAtTime(6, start + length / 2);
     vibrato.connect(depth);
     vibrato.start(start);
     vibrato.stop(end);
@@ -55,48 +52,6 @@ function tone(
     partial.start(start);
     partial.stop(end);
   });
-}
-
-function sealLoop(buffer: AudioBuffer, seconds = .075) {
-  const samples = buffer.getChannelData(0);
-  const edge = Math.floor(buffer.sampleRate * seconds);
-  for (let i = 0; i < edge; i++) {
-    const fade = Math.sin((Math.PI / 2) * i / edge);
-    samples[i] *= fade;
-    samples[samples.length - 1 - i] *= fade;
-  }
-  return buffer;
-}
-
-async function renderMusic(id: Track) {
-  const score = scores[id];
-  const beat = 60 / score.bpm;
-  const ctx = new OfflineAudioContext(1, Math.ceil(score.bars.length * 4 * beat * sampleRate), sampleRate);
-  const room = ctx.createGain();
-  room.connect(ctx.destination);
-  for (const [time, level] of [[.16, .15], [.32, .085]]) {
-    const delay = ctx.createDelay();
-    const damping = ctx.createBiquadFilter();
-    const reflection = ctx.createGain();
-    delay.delayTime.value = time;
-    damping.frequency.value = 1250;
-    reflection.gain.value = level;
-    room.connect(delay).connect(damping).connect(reflection).connect(ctx.destination);
-  }
-  score.bars.forEach(({bass, chord, melody}, index) => {
-    const start = index * 4 * beat + .04;
-    tone(ctx, room, id === 'river' ? 'pluck' : 'bow', bass, start, 3.65 * beat, .075);
-    if (id === 'river') tone(ctx, room, 'pluck', bass, start + beat * 2, beat * 1.1, .049);
-    chord.forEach((pitch, i) => {
-      const arpeggiate = id === 'valley' || id === 'dawn' || id === 'zunyi';
-      const offset = arpeggiate ? .43 + i * .52 : .15 + i * .06;
-      tone(ctx, room, arpeggiate ? 'pluck' : 'bow', pitch, start + beat * offset, beat * (3.78 - offset), .039);
-    });
-    melody.forEach(([offset, pitch, length]) => {
-      tone(ctx, room, score.voice, pitch, start + offset * beat, length * beat, .103);
-    });
-  });
-  return sealLoop(await ctx.startRendering());
 }
 
 function randomSequence(seed: number) {
@@ -187,51 +142,15 @@ async function renderCue(cue: Cue) {
   return ctx.startRendering();
 }
 
-const weather: Record<SceneId, {cutoff: number; high: number; strength: number}> = {
-  valley: {cutoff: 295, high: 4300, strength: .22},
-  river: {cutoff: 750, high: 2310, strength: .74},
-  zunyi: {cutoff: 1070, high: 4300, strength: .44},
-  snow: {cutoff: 390, high: 2450, strength: .82},
-  marsh: {cutoff: 920, high: 3850, strength: .60},
-  dawn: {cutoff: 280, high: 2600, strength: .20},
-};
-
-function renderAmbience(ctx: AudioContext, scene: SceneId) {
-  const buffer = ctx.createBuffer(1, sampleRate * 12, sampleRate);
-  const samples = buffer.getChannelData(0);
-  const {cutoff, high, strength} = weather[scene];
-  const random = randomSequence(cutoff);
-  const lowRate = 1 - Math.exp(-2 * Math.PI * cutoff / sampleRate);
-  const highRate = 1 - Math.exp(-2 * Math.PI * high / sampleRate);
-  let low = 0;
-  let upper = 0;
-  let droplets = 0;
-  const wet = scene === 'zunyi' || scene === 'marsh';
-  for (let i = 0; i < samples.length; i++) {
-    const white = random();
-    low += lowRate * (white - low);
-    upper += highRate * (white - upper);
-    const t = i / samples.length * 2 * Math.PI;
-    const gust = .53 + .27 * Math.sin(t * 2) + .15 * Math.sin(t * 5 + 1);
-    if (wet) {
-      droplets *= .994;
-      if (white > .997) droplets = scene === 'marsh' ? .53 : .73;
-    }
-    samples[i] = strength * (gust * low + (.12 + droplets) * (upper - low));
-  }
-  return sealLoop(buffer, .18);
-}
-
 export class Soundscape {
   private readonly context = new AudioContext();
   private readonly music = this.context.createGain();
-  private readonly ambience = this.context.createGain();
   private readonly effects = this.context.createGain();
-  private readonly musicLayer: Layer = {id: null, revision: 0};
-  private readonly ambienceLayer: Layer = {id: null, revision: 0};
+  private track: Track | null = null;
+  private musicRevision = 0;
+  private playingMusic?: Playing;
   private readonly tracks = new Map<Track, Promise<AudioBuffer>>();
   private readonly cueBuffers = new Map<Cue, Promise<AudioBuffer>>();
-  private readonly ambientBuffers = new Map<SceneId, AudioBuffer>();
   private readonly activeCues = new Set<Playing>();
   private cueRevision = 0;
   private disposed = false;
@@ -241,7 +160,7 @@ export class Soundscape {
     limiter.threshold.value = -11;
     limiter.ratio.value = 6;
     limiter.connect(this.context.destination);
-    for (const bus of [this.music, this.ambience, this.effects]) {
+    for (const bus of [this.music, this.effects]) {
       bus.gain.value = 0;
       bus.connect(limiter);
     }
@@ -261,57 +180,53 @@ export class Soundscape {
     const now = this.context.currentTime;
     const duck = paused ? .26 : hushed ? .10 : 1;
     this.music.gain.setTargetAtTime(audio ? music * duck : 0, now, .14);
-    this.ambience.gain.setTargetAtTime(audio ? effects * .58 * duck : 0, now, .15);
     this.effects.gain.setTargetAtTime(audio && !paused ? effects : 0, now, .035);
     if (!audio || paused || !effects) this.clearCues();
   }
 
-  setScene(track: Track | null, ambience: SceneId | null) {
-    this.transition(this.musicLayer, track, this.music, 1.55, async id => {
-      const key = id as Track;
-      let buffer = this.tracks.get(key);
-      if (!buffer) {
-        buffer = renderMusic(key).catch(error => { this.tracks.delete(key); throw error; });
-        this.tracks.set(key, buffer);
-      }
-      return buffer;
-    });
-    this.transition(this.ambienceLayer, ambience, this.ambience, .9, async id => {
-      const key = id as SceneId;
-      let buffer = this.ambientBuffers.get(key);
-      if (!buffer) {
-        buffer = renderAmbience(this.context, key);
-        this.ambientBuffers.set(key, buffer);
-      }
-      return buffer;
+  setTrack(track: Track | null) {
+    if (this.track === track) return;
+    this.track = track;
+    const revision = ++this.musicRevision;
+    const fade = 1.4;
+    const stopCurrent = () => {
+      if (this.playingMusic) this.retire(this.playingMusic, fade);
+      this.playingMusic = undefined;
+    };
+    if (!track) {
+      stopCurrent();
+      return;
+    }
+    let pending = this.tracks.get(track);
+    if (!pending) {
+      pending = this.loadTrack(track).catch(error => {
+        this.tracks.delete(track);
+        throw error;
+      });
+      this.tracks.set(track, pending);
+    }
+    void pending.then(buffer => {
+      if (this.disposed || revision !== this.musicRevision) return;
+      stopCurrent();
+      const now = this.context.currentTime;
+      const next = this.source(buffer, this.music);
+      next.source.loop = true;
+      next.gain.gain.setValueAtTime(0, now);
+      next.gain.gain.linearRampToValueAtTime(1, now + fade);
+      next.source.start(now);
+      this.playingMusic = next;
+    }).catch(() => {
+      if (this.disposed || revision !== this.musicRevision) return;
+      stopCurrent();
+      this.track = null;
     });
   }
 
-  private transition(
-    layer: Layer, id: string | null, to: GainNode, fade: number,
-    load: (id: string) => Promise<AudioBuffer>,
-  ) {
-    if (layer.id === id) return;
-    layer.id = id;
-    const revision = ++layer.revision;
-    if (!id) {
-      if (layer.playing) this.retire(layer.playing, fade);
-      layer.playing = undefined;
-      return;
-    }
-    void load(id).then(buffer => {
-      if (this.disposed || revision !== layer.revision) return;
-      if (layer.playing) this.retire(layer.playing, fade);
-      const now = this.context.currentTime;
-      const layerSound = this.source(buffer, to);
-      layerSound.source.loop = true;
-      layerSound.gain.gain.setValueAtTime(0, now);
-      layerSound.gain.gain.linearRampToValueAtTime(1, now + fade);
-      layerSound.source.start(now);
-      layer.playing = layerSound;
-    }).catch(() => {
-      if (revision === layer.revision) layer.id = null;
-    });
+  private async loadTrack(track: Track) {
+    const response = await fetch(assetUrl('/assets/music/' + track + '.mp3'));
+    if (!response.ok) throw new Error('Music could not be loaded: ' + track);
+    const data = await response.arrayBuffer();
+    return new OfflineAudioContext(1, 1, sampleRate).decodeAudioData(data);
   }
 
   private source(buffer: AudioBuffer, to: AudioNode): Playing {

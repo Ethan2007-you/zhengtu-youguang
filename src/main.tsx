@@ -8,7 +8,7 @@ import './immersive.css';
 import {PlayView} from './PlayView';
 import {actorAsset,requiredCastAssets} from './performance';
 import {decodeImage} from './imageCache';
-import {audioBeat} from './audioScore';
+import {audioBeat,musicTracks,musicLicense,musicSource} from './audioScore';
 import {Soundscape} from './soundscape';
 import './cast.css';
 
@@ -36,7 +36,7 @@ function App(){
  const node=nodes[save.node];const activeLines=linesFor(node,save.state,save.phase);const line=activeLines[save.line];const full=line?textOf(line,save.state):'';const segments=typeof Intl.Segmenter==='function'?Array.from(new Intl.Segmenter('zh',{granularity:'grapheme'}).segment(full),x=>x.segment):Array.from(full);const last=save.line>=activeLines.length-1;const ending=node.ending?getEnding(save.state):null;
  const audioRef=useRef<Soundscape|null>(null);
  const lastAudioBeat=useRef('');
- const {track,ambience,cues,hushed,key:beatKey}=audioBeat(save,ending?.id);
+ const {track,cues,hushed,key:beatKey}=audioBeat(save,ending?.id);
  const paused=panel!==null;const typingTimer=useRef<ReturnType<typeof setInterval>|null>(null);
  const stopTyping=useCallback(()=>{if(typingTimer.current!==null){clearInterval(typingTimer.current);typingTimer.current=null;}},[]);
  const notify=(t:string)=>setToast(t);
@@ -82,7 +82,7 @@ function App(){
   if(!sound)return;
   const active=playing&&settings.audio;
   sound.mix({audio:active,music:settings.music,effects:settings.effects,paused,hushed});
-  sound.setScene(active&&settings.music>0?track:null,active&&settings.effects>0?ambience:null);
+  sound.setTrack(active&&settings.music>0?track:null);
   if(!playing){
    lastAudioBeat.current='';
    return;
@@ -90,7 +90,7 @@ function App(){
   if(lastAudioBeat.current===beatKey)return;
   lastAudioBeat.current=beatKey;
   if(active&&!paused&&settings.effects>0)sound.playCues(cues);
- },[playing,settings.audio,settings.music,settings.effects,paused,hushed,track,ambience,beatKey,cues]);
+ },[playing,settings.audio,settings.music,settings.effects,paused,hushed,track,beatKey,cues]);
  useEffect(()=>{
   const visibility=()=>audioRef.current?.setVisibility(document.hidden);
   document.addEventListener('visibilitychange',visibility);
@@ -118,7 +118,11 @@ function App(){
    {panel==='people'&&<><p className="intro-text">他们是为这个故事创作的普通人，没有历史人物原型。每个人都带着自己的牵挂上路。</p><div className="people-list">{characters.map(p=><article className="person-card" key={p.name}><div className="person-portrait" style={{backgroundImage:`url(${actorAsset(p.id)})`,backgroundSize:'contain',backgroundPosition:'center',backgroundRepeat:'no-repeat'}}/><div><span className="eyebrow">虚构人物</span><h3>{p.name}</h3><small>{p.age}</small><p>{p.text}</p></div></article>)}</div></>}
    {panel==='log'&&<><p className="muted">按阅读顺序保留对白与选择，读档后恢复到对应记录。</p><div className="log-list">{[...save.log,...(line?[{who:line.who,text:full,chapter:node.chapter}]:[])].map((l,i)=><article key={i} className={l.who==='你的选择'?'log-choice':''}><span>{l.who==='你'?'石头':l.who} · 第{CHAPTERS[l.chapter-1]?.number}章</span><p>{l.text}</p></article>)}</div></>}
    {panel==='settings'&&<><p className="intro-text">让画面安静一点，也可以完整地走过这段路。</p><fieldset><legend>画面效果</legend>{([{id:'standard',label:'标准',detail:'轻微视差、环境粒子与剧情镜头'},{id:'low',label:'低特效',detail:'减少粒子，关闭指针视差'},{id:'reduced',label:'减少动态',detail:'关闭持续运动，保留全部故事与操作'}] as const).map(v=><label className="setting-option" key={v.id}><input type="radio" name="quality" checked={settings.quality===v.id} onChange={()=>setSettings(s=>({...s,quality:v.id}))}/><span><strong>{v.label}</strong><small>{v.detail}</small></span></label>)}</fieldset><label className="select-setting">文字显示<select aria-label="文字显示" value={settings.speed} onChange={e=>setSettings(s=>({...s,speed:Number(e.target.value)}))}><option value={22}>较快</option><option value={40}>适中</option><option value={65}>缓慢</option><option value={0}>直接显示全文</option></select></label><div className="select-setting"><span>旅程声音<small>进入旅程后播放，暂歇时自动放轻</small></span><button className="secondary-button" onClick={toggleAudio}>{settings.audio?'关闭声音':'开启声音'}</button></div>
-   {([{id:'music',label:'配乐'},{id:'effects',label:'环境与动作音效'}] as const).map(({id,label})=><label key={id} className="select-setting sound-level"><span>{label}<small>{Math.round(settings[id]*100)}%</small></span><input type="range" aria-label={label+'音量'} min={0} max={100} value={Math.round(settings[id]*100)} disabled={!settings.audio} onChange={e=>setSettings(s=>({...s,[id]:Number(e.target.value)/100}))}/></label>)}<p className="fine-print">空格 / Enter：推进对白；L：打开记录；Esc：暂歇或关闭面板。系统减少动态偏好在首次进入时生效。</p></>}
+   {([{id:'music',label:'配乐'},{id:'effects',label:'剧情音效'}] as const).map(({id,label})=><label key={id} className="select-setting sound-level"><span>{label}<small>{Math.round(settings[id]*100)}%</small></span><input type="range" aria-label={label+'音量'} min={0} max={100} value={Math.round(settings[id]*100)} disabled={!settings.audio} onChange={e=>setSettings(s=>({...s,[id]:Number(e.target.value)/100}))}/></label>)}
+   <details className="sound-credits"><summary>配乐署名</summary>
+    <p>Kevin MacLeod（Incompetech）。录音经节选、淡入淡出及音量处理。<a href={musicLicense} target="_blank" rel="noreferrer">CC BY 4.0</a></p>
+    <ul>{Object.values(musicTracks).map(({title,isrc})=><li key={isrc}><a href={musicSource(isrc)} target="_blank" rel="noreferrer">{title}</a></li>)}</ul>
+   </details><p className="fine-print">空格 / Enter：推进对白；L：打开记录；Esc：暂歇或关闭面板。系统减少动态偏好在首次进入时生效。</p></>}
    {panel==='saves'&&<><p className="intro-text">进度保存在当前浏览器，不上传个人信息。新旅程会覆盖自动存档；手动存档保留到你再次保存。</p>{(['auto','manual'] as const).map(slot=>{const s=loadSave(slot);return <article className="save-card" key={slot}><span className="eyebrow">{slot==='auto'?'自动存档':'手动存档'}</span><h3>{s?`第${CHAPTERS[nodes[s.node].chapter-1].number}章 · ${nodes[s.node].title}`:'尚无存档'}</h3><p>{s?new Date(s.savedAt).toLocaleString('zh-CN'):'开始旅程后，可以在此保存当前进度。'}</p><div>{slot==='manual'&&<button className="secondary-button" disabled={!playing} onClick={()=>{if(writeSave('manual',save)){notify('手动存档已保存。');setPanel(null);}else notify('未能写入存档，浏览器存储可能不可用。');}}>保存到此处</button>}<button className="text-button" disabled={!s} onClick={()=>restore(slot)}>读取进度 ↗</button></div></article>})}</>}
    {panel==='endings'&&<><p className="intro-text">每种经历都有它的重量。收藏记录不同的故事，不给人物评定等级。</p>{endingDefinitions.map((e,i)=><article className={`collected-ending ${unlocked.includes(e.id)?'unlocked':''}`} key={e.id}><span className="eyebrow">经历 {String(i+1).padStart(2,'0')} / {unlocked.includes(e.id)?'已读':'尚未经历'}</span><h3>{unlocked.includes(e.id)?e.title:'另一段尚未走过的路'}</h3><p>{unlocked.includes(e.id)?e.text:'身体状况、寻人线索与交接安排，会留下不同的个人经历。'}</p></article>)}<p className="fine-print">已读选择记录：{seenChoices.length} 个。收集进度保存在当前浏览器。</p></>}
   </Modal>}

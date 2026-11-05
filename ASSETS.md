@@ -29,7 +29,19 @@ art/shitou-characters-source.png、art/characters-source.png与art/landscapes-so
 
 ## 配乐与音效
 
-配乐旋律、拟乐器音色、风雨水声和剧情动作音效均为本项目原创合成，编排及生成代码位于 src/audioScore.ts 与 src/soundscape.ts。号声属于情境复原。使用 Web Audio 在设备端生成音频，不引用第三方曲目或采样。
+现版配乐取自 Kevin MacLeod（Incompetech）的现代器乐作品，按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 使用。各录音的授权与署名见对应的作曲者页面。
+
+| 场景 | 录音及作者页 | 原录音节选 |
+| --- | --- | --- |
+| 苏区出发 | [Guzheng City](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN2100001) | 0:01–0:53 |
+| 湘江渡口 | [Long Road Ahead B](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100589) | 0:00–0:55 |
+| 遵义 | [Eastern Thought](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100682) | 0:12–1:08 |
+| 雪山草地 | [Peaceful Desolation](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1200017) | 0:01–0:58 |
+| 陕北 | [Meditation Impromptu 02](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100162) | 0:00–0:59 |
+
+节选经过单声道转换、频段与响度处理、淡入淡出和 MP3 转码，放在 public/assets/music 下。仅配乐录音及其节选采用上述许可。声音设置内提供同样的署名与链接。曲目用于情境配乐，属于现代创作。
+
+脚步、草绳、纸张、木板、布料、铜扣、碗声和远号由网页合成。剧情编排与播放分别位于 src/audioScore.ts 和 src/soundscape.ts。
 
 ## 设计与历史边界
 

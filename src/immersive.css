@@ -233,3 +233,13 @@ body:has(.is-playing){overflow:hidden;background:#172018}
   accent-color: var(--red);
 }
 .is-playing .modal .sound-level input[type="range"] { accent-color: #bc8d60; }
+
+.sound-credits {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.sound-credits summary { cursor: pointer; min-height: 32px; }
+.sound-credits ul { margin: 8px 0 0; padding-inline-start: 20px; }
+.sound-credits a { color: inherit; }
