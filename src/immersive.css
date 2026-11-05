@@ -226,3 +226,10 @@ body:has(.is-playing){overflow:hidden;background:#172018}
 }
 .actor-sprite,.person-portrait{background-image:url('/assets/characters.webp?v=shitou2')}
 @media(max-width:600px){.is-playing .actors{inset:0}}
+
+.sound-level input[type="range"] {
+  width: min(45%, 240px);
+  min-height: 32px;
+  accent-color: var(--red);
+}
+.is-playing .modal .sound-level input[type="range"] { accent-color: #bc8d60; }

@@ -4,7 +4,7 @@ import type {Line,SceneId} from './story';
 import type {Performance} from './performance';
 import {CastStage} from './CastStage';
 import {assetUrl} from './assetUrl';
-export type Settings={quality:'standard'|'low'|'reduced';speed:number;audio:boolean};
+export type Settings={quality:'standard'|'low'|'reduced';speed:number;audio:boolean;music:number;effects:number};
 export const sceneAssets:Record<SceneId,string>=Object.fromEntries(['valley','river','zunyi','marsh','snow','dawn'].map(id=>[id,assetUrl('/assets/'+id+'.webp?v=shitou2')])) as Record<SceneId,string>;
 export function preload(src:string){return new Promise<void>((resolve,reject)=>{const im=new Image();im.onload=()=>im.decode().then(()=>resolve()).catch(()=>resolve());im.onerror=()=>reject(new Error('画面暂时未能载入'));im.src=assetUrl(src);});}
 

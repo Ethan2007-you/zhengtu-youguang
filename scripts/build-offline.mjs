@@ -45,15 +45,15 @@ css=css.replace(/url\(\s*(["']?)(\/assets\/[^\s)"']+)\1\s*\)/g,(_,q,url)=>{
 });
 if(/url\(\s*["']?\//.test(css))throw new Error('An absolute CSS URL remains.');
 html=html.replace(scripts[0][0],'');
-html=html.replace('</head>','<style>'+css.replace(/<\/style/gi,'<\\/style')+'</style></head>');
+html=html.replace('</head>',()=>'<style>'+css.replace(/<\/style/gi,'<\\/style')+'</style></head>');
 const assetJson=JSON.stringify(assets).replace(/</g,'\\u003c');
 const bootstrap='window.__ZHENGTU_ASSETS__=JSON.parse(document.getElementById("zt-embedded-assets").textContent);'+
  'for(const [file,name] of Object.entries('+JSON.stringify(variables)+'))document.documentElement.style.setProperty(name,\'url("\'+window.__ZHENGTU_ASSETS__[file]+\'")\');';
 const inlineCode='(()=>{"use strict";\n'+code+'\n})();';
 new Script(bootstrap+'\n'+inlineCode,{filename:'offline-index.js'});
-html=html.replace('</body>','<script id="zt-embedded-assets" type="application/json">'+assetJson+'</script><script>'+bootstrap+'\n'+inlineCode.replace(/<\/script/gi,'<\\/script')+'</script></body>');
+html=html.replace('</body>',()=>'<script id="zt-embedded-assets" type="application/json">'+assetJson+'</script><script>'+bootstrap+'\n'+inlineCode.replace(/<\/script/gi,'<\\/script')+'</script></body>');
 if(/<script\b[^>]*\bsrc=|<link\b[^>]*rel=["'](?:stylesheet|modulepreload)/i.test(html))throw new Error('External entry resource remains.');
-const help='征途有光 · 双击即玩版\r\n\r\n双击 index.html，用 Edge 或 Chrome 打开即可。\r\n不需要 Node.js、CMD、本地服务器或安装依赖；游戏图片、人物、脚本和样式均在这个HTML中。\r\n可以把 index.html 单独复制到其他文件夹或U盘使用。史料链接需联网查看。\r\n\r\n进度保存在当前浏览器。文件版与原来的 localhost 版存档分开；移动或重命名HTML后，浏览器也可能把它视为另一个存档位置。\r\n若打开后看到代码，请右键该文件，选择“打开方式 → Microsoft Edge / Google Chrome”。\r\n\r\n本文件是打包成品；开发源码的 index.html 是Vite开发入口，两者用途不同。\r\n';
+const help='征途有光 · 双击即玩版\r\n\r\n双击 index.html，用 Edge 或 Chrome 打开即可。\r\n不需要 Node.js、CMD、本地服务器或安装依赖；游戏图片、人物、脚本和样式均在这个HTML中。\r\n可以把 index.html 单独复制到其他文件夹或U盘使用。史料链接需联网查看。\r\n\r\n点击开始或继续旅程后播放配乐和音效，可在「暂歇 → 阅读、画面与声音」调节或关闭。\r\n\r\n进度保存在当前浏览器。文件版与原来的 localhost 版存档分开；移动或重命名HTML后，浏览器也可能把它视为另一个存档位置。\r\n若打开后看到代码，请右键该文件，选择“打开方式 → Microsoft Edge / Google Chrome”。\r\n\r\n本文件是打包成品；开发源码的 index.html 是Vite开发入口，两者用途不同。\r\n';
 for(const directory of [out,standalone]){
  await mkdir(directory,{recursive:true});await writeFile(path.join(directory,'index.html'),html,'utf8');
  await writeFile(path.join(directory,'打开说明.txt'),help,'utf8');

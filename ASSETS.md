@@ -27,6 +27,10 @@ scripts/prepare_cast.py使用Pillow做面板裁取、尺寸整理与WebP编码�
 
 art/shitou-characters-source.png、art/characters-source.png与art/landscapes-source.png是旧版历史源稿；当前人物演出不再使用旧表情图集。保留这些文件供对照，不能把旧版图集数量当作本版实际动作数量。
 
+## 配乐与音效
+
+配乐旋律、拟乐器音色、风雨水声和剧情动作音效均为本项目原创合成，编排及生成代码位于 src/audioScore.ts 与 src/soundscape.ts。号声属于情境复原。使用 Web Audio 在设备端生成音频，不引用第三方曲目或采样。
+
 ## 设计与历史边界
 
 服装装备采用克制、朴素的历史情境设计，人物为原创虚构。央金有自己的家庭与粮食界限，刘婶是陕北另一位群众；不靠夸张民族饰品或统一笑脸区分角色。图像没有替代史料，所有剧情事实与史料出处仍见README及游戏内历史回望。
